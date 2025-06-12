@@ -19,9 +19,9 @@ struct CLHLock {
 }
 
 impl Node {
-    fn new() -> *mut CachePadded<Self> {
+    fn new(locked: bool) -> *mut CachePadded<Self> {
         Box::into_raw(Box::new(CachePadded::new(Self {
-            locked: AtomicBool::new(false),
+            locked: AtomicBool::new(locked),
         })))
     }
 }
@@ -29,13 +29,13 @@ impl Node {
 impl CLHLock {
     fn new() -> Self {
         Self {
-            tail: AtomicPtr::new(Node::new()),
+            tail: AtomicPtr::new(Node::new(false)),
         }
     }
 
     fn lock(&self) -> Token {
         let backoff = Backoff::new();
-        let node = Node::new();
+        let node = Node::new(true);
         let prev = self.tail.swap(node, Ordering::AcqRel);
 
         while unsafe { (*prev).locked.load(Ordering::Acquire)} {
