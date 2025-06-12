@@ -1,7 +1,8 @@
 [package]
 name = "clh-lock-rs"
 version = "0.1.0"
-edition = "2024"
+edition = "2025"
+author  = "Raushan"
 
 [dependencies]
 crossbeam-utils = "0.8.21"
