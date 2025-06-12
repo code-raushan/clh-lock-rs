@@ -17,6 +17,7 @@ struct Token(*const CachePadded<Node>);
 struct CLHLock {
     tail: AtomicPtr<CachePadded<Node>>,
 }
+unsafe impl Send for Token {}
 
 impl Node {
     fn new(locked: bool) -> *mut CachePadded<Self> {
@@ -52,6 +53,17 @@ impl CLHLock {
         node.locked.store(false, Ordering::Release);
     }
 }
+
+impl Drop for CLHLock {
+    fn drop(&mut self) {
+        // Drop the node made by the last thread that `lock()`ed.
+        let node = *self.tail.get_mut();
+
+        // SAFETY: Since this is the tail node, no other thread has access to it.
+        drop(unsafe { Box::from_raw(node) });
+    }
+}
+
 
 fn main() {
     let lock = Arc::new(CLHLock::new());
